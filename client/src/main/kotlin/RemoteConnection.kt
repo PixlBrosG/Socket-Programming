@@ -47,7 +47,7 @@ class RemoteConnection
 
     fun send(command: String)
     {
-        if (!isConnected) return;
+        if (!isConnected) return
         try
         {
             writer?.write(command + "\n")

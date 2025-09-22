@@ -12,6 +12,8 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+
+    implementation("io.github.spair:imgui-java-app:1.90.0")
 }
 
 tasks.test {
@@ -22,5 +24,5 @@ kotlin {
 }
 
 application {
-    mainClass.set("edu.ntnu.eliasei.smarttv.MainKt")
+    mainClass.set("edu.ntnu.eliasei.smarttv.ClientCliKt")
 }
