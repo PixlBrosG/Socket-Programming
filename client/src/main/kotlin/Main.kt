@@ -10,34 +10,25 @@ fun main(args: Array<String>)
         return;
     }
 
-    val host = args[0];
-    val port = args[1].toInt();
+    val connection = RemoteConnection()
+    connection.connect(args[0], args[1].toInt())
 
-    Socket(host, port).use { socket ->
-        val reader = socket.getInputStream().bufferedReader();
-        val writer = socket.getOutputStream().bufferedWriter();
+    println("Connected to ${args[0]}:${args[1]}")
 
-        println("Connected to SmartTV at $host:$port");
+    while (true)
+    {
+        print("> ")
+        System.out.flush();
 
-        while (true)
+        val input = readlnOrNull() ?: break
+        connection.send(input)
+
+        Thread.sleep(100) // For demo purposes
+        var msg = connection.pollMessage()
+        while (msg != null)
         {
-            print("> ");
-            System.out.flush();
-
-            val input = readlnOrNull() ?: run {
-                println("No input, exiting loop")
-                break
-            }
-            writer.write(input + "\n")
-            writer.flush()
-
-            val response = reader.readLine()
-            if (response == null) {
-                println("Server closed connection")
-                break
-            }
-            println("TV: $response")
-
+            println("TV: $msg")
+            msg = connection.pollMessage()
         }
     }
 }
