@@ -50,26 +50,30 @@ class SmartRemoteApp(private val host: String, private val port: Int) : Applicat
         {
             if (ImGui.button("ON"))
             {
+                val cmd = CommandRegistry.get("ON")
+                // TODO: Send ON command using RemoteConnection
                 log.add(">> Sent: ON")
-                // TODO: Send ON command
             }
             ImGui.sameLine()
             if (ImGui.button("OFF"))
             {
+                val cmd = CommandRegistry.get("OFF")
+                // TODO: Send OFF command using RemoteConnection
                 log.add(">> Sent: OFF")
-                // TODO: Send OFF command
             }
 
             if (ImGui.button("Channel Up"))
             {
-                log.add(">> Sent: SET_CHANNEL current+1")
+                val cmd = CommandRegistry.get("SET_CHANNEL")
                 // TODO: Send Channel Up command
+                log.add(">> Sent: SET_CHANNEL current+1")
             }
             ImGui.sameLine()
             if (ImGui.button("Channel Down"))
             {
-                log.add(">> Sent: SET_CHANNEL current-1")
+                val cmd = CommandRegistry.get("SET_CHANNEL")
                 // TODO: Send Channel Down command
+                log.add(">> Sent: SET_CHANNEL current-1")
             }
         }
         else
