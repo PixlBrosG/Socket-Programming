@@ -29,7 +29,7 @@ fun initCommands()
     CommandRegistry.register(Command("OFF", "Turn TV off") { _ -> "OFF "})
     CommandRegistry.register(Command("GET_CHANNEL", "Get current channel") { _ -> "GET_CHANNEL "})
     CommandRegistry.register(Command("GET_CHANNELS", "Get number of available channels") { _ -> "GET_CHANNELS" })
-    CommandRegistry.register(Command("SET_CHANNEL", "Set channel by number") { args ->
+    CommandRegistry.register(Command("SET_CHANNEL", "Set channel by number (+ or - for relative)") { args ->
         if (args.size != 1) throw IllegalArgumentException("SET_CHANNEL requires 1 argument")
         "SET_CHANNEL ${args[0]}"
     })

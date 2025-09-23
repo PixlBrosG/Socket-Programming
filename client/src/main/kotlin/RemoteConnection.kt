@@ -2,6 +2,7 @@ package edu.ntnu.eliasei.smarttv
 
 import java.io.BufferedReader
 import java.io.BufferedWriter
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -13,6 +14,8 @@ class RemoteConnection
     private var writer: BufferedWriter? = null
     private val executor = Executors.newSingleThreadExecutor()
 
+    @Volatile private var running = false
+
     val messages = LinkedBlockingQueue<String>()
 
     val isConnected: Boolean
@@ -21,14 +24,18 @@ class RemoteConnection
     fun connect(host: String, port: Int)
     {
         if (isConnected) return
-        socket = Socket(host, port)
-        reader = socket!!.getInputStream().bufferedReader()
-        writer = socket!!.getOutputStream().bufferedWriter()
 
         executor.submit {
             try
             {
-                while (true)
+                val address = InetSocketAddress(host, port)
+                socket = Socket()
+                socket!!.connect(address, 2000)
+                reader = socket!!.getInputStream().bufferedReader()
+                writer = socket!!.getOutputStream().bufferedWriter()
+                running = true
+
+                while (running)
                 {
                     val line = reader?.readLine() ?: break
                     messages.put(line)
@@ -36,11 +43,11 @@ class RemoteConnection
             }
             catch (e: Exception)
             {
-                messages.put("Disconnected: ${e.message}")
+                messages.put("ERROR connect_failed: ${e.message}")
             }
             finally
             {
-                disconnect()
+                disconnectInternal()
             }
         }
     }
@@ -66,7 +73,22 @@ class RemoteConnection
         return messages.poll()
     }
 
-    fun disconnect() {
+    fun disconnect()
+    {
+        running = false
+        try
+        {
+            socket?.shutdownInput()
+        } catch (_: Exception) {}
+        try
+        {
+            socket?.shutdownOutput()
+        } catch (_: Exception) {}
+        disconnectInternal()
+    }
+
+    fun disconnectInternal()
+    {
         try { reader?.close() } catch (_: Exception) {}
         try { writer?.close() } catch (_: Exception) {}
         try { socket?.close() } catch (_: Exception) {}

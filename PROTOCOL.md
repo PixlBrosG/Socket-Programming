@@ -27,8 +27,18 @@ This document defines the **application-layer protocol** used between Smart TV s
   Query the number of available channels.
 
 - `SET_CHANNEL <n>`
-  Set the TV to channel `<n>` (valid range: `1..C`).
-  
+Set the TV channel.
+
+  - If `<n>` is an integer (e.g. `5`), the TV switches to that channel.
+  - If `<n>` begins with `+` or `-` (e.g. `+1`, `-2`), the TV changes relative
+  to the current channel.  
+  Example: If the current channel is `4`, then:
+    - `SET_CHANNEL +1` → channel 5
+    - `SET_CHANNEL -2` → channel 2
+
+  - Valid final channel range: `1..C`.  
+  - If the result is outside this range, the command fails with: `ERROR invalid_channel`.
+
 ---
 
 ## Server → Client Responses

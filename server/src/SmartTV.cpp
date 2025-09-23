@@ -57,11 +57,31 @@ namespace SmartTV {
 		{
 			if (!IsOn()) return "ERROR tv_off\n";
 
-			size_t c;
-			if (!(iss >> c)) return "ERROR invalid_command\n";
-			if (!SetChannel(c)) return "ERROR invalid_channel\n";
-			return "OK\n";
+			std::string arg;
+			if (!(iss >> arg)) return "ERROR missing_argument\n";
+
+			try {
+				size_t newChannel = 0;
+
+				if (arg.starts_with('+') || arg.starts_with('-')) {
+					// Relative offset
+					int offset = std::stoi(arg);
+					newChannel = m_CurrentChannel + offset;
+				} else {
+					// Absolute channel
+					newChannel = std::stoi(arg);
+				}
+
+				if (!SetChannel(newChannel))
+					return "ERROR invalid_channel\n";
+
+				return "OK\n";
+			}
+			catch (const std::exception&) {
+				return "ERROR invalid_argument\n";
+			}
 		}
+
 
 		return "ERROR invalid_command\n";
 	}
