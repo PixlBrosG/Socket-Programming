@@ -21,10 +21,14 @@ if(NOT asio_FOUND)
 endif()
 
 add_executable(tv-server
-    src/main.cpp
-    src/SmartTV.cpp
+        src/ClientManager.cpp
+        src/main.cpp
+        src/Session.cpp
+        src/SmartTV.cpp
 
-    include/SmartTV.h
+        include/ClientManager.h
+        include/Session.h
+        include/SmartTV.h
 )
 
 # Asio is header-only, so we don't need to link a library, just include the headers

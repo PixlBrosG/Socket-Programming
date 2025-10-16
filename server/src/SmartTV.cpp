@@ -5,85 +5,104 @@
 
 namespace SmartTV {
 
-	SmartTV::SmartTV(size_t channels)
-		: m_On(false), m_ChannelCount(channels), m_CurrentChannel(1)
+	SmartTV::SmartTV(int channels)
+		: m_TotalChannels(channels)
 	{
-		if (channels == 0)
-			m_ChannelCount = 10;
 	}
 
-	bool SmartTV::SetChannel(size_t channel)
+	void SmartTV::TurnOn() { std::lock_guard lock(m_Mutex); m_On = true; }
+	void SmartTV::TurnOff() { std::lock_guard lock(m_Mutex); m_On = false; }
+	bool SmartTV::IsOn() const { std::lock_guard lock(m_Mutex); return m_On; }
+	uint32_t SmartTV::GetChannel() const { std::lock_guard lock(m_Mutex); return m_CurrentChannel; }
+
+	bool SmartTV::SetChannel(uint32_t channel)
 	{
-		if (!m_On) return false;
-		if (channel < 1 || channel > m_ChannelCount) return false;
+		std::lock_guard lock(m_Mutex);
+		if (channel < 1 || channel < m_TotalChannels)
+			return false;
+
 		m_CurrentChannel = channel;
 		return true;
 	}
 
-	std::string SmartTV::HandleCommand(const std::string& command)
+	SmartTV::Result SmartTV::HandleCommand(const std::string& command)
 	{
-		// Tokenize
 		std::istringstream iss(command);
 		std::string cmd;
 		iss >> cmd;
-
 		std::ranges::transform(cmd, cmd.begin(), ::toupper);
+
+		std::lock_guard lk(m_Mutex);
+		Result r{"ERROR invalid_command\n", false};
 
 		if (cmd == "ON")
 		{
-			TurnOn();
-			return "OK\n";
+			m_On = true;
+			r.Line = "OK\n";
 		}
-
-		if (cmd == "OFF")
+		else if (cmd == "OFF")
 		{
-			TurnOff();
-			return "OK\n";
+			m_On = false;
+			r.Line = "OK\n";
 		}
-
-		if (cmd == "GET_CHANNEL")
+		else if (cmd == "STATUS")
 		{
-			if (!IsOn()) return "ERROR tv_off\n";
-			return "CHANNEL " + std::to_string(GetCurrentChannel()) + '\n';
+			r.Line = std::string("STATE ") + (m_On ? "ON\n" : "OFF\n");
 		}
-
-		if (cmd == "GET_CHANNELS")
+		else if (cmd == "GET_CHANNELS")
 		{
-			if (!IsOn()) return "ERROR tv_off\n";
-			return "CHANNELS " + std::to_string(GetChannelCount()) + '\n';
+			if (!m_On)
+				r.Line = "ERROR tv_off\n";
+			else
+				r.Line = "CHANNELS " + std::to_string(m_TotalChannels) + "\n";
 		}
-
-		if (cmd == "SET_CHANNEL")
+		else if (cmd == "GET_CHANNEL")
 		{
-			if (!IsOn()) return "ERROR tv_off\n";
-
-			std::string arg;
-			if (!(iss >> arg)) return "ERROR missing_argument\n";
-
-			try {
-				size_t newChannel = 0;
-
-				if (arg.starts_with('+') || arg.starts_with('-')) {
-					// Relative offset
-					int offset = std::stoi(arg);
-					newChannel = m_CurrentChannel + offset;
-				} else {
-					// Absolute channel
-					newChannel = std::stoi(arg);
+			if (!m_On)
+				r.Line = "ERROR tv_off\n";
+			else
+				r.Line = "CHANNEL " + std::to_string(m_CurrentChannel) + "\n";
+		}
+		else if (cmd == "SET_CHANNEL") {
+			if (!m_On) r.Line = "ERROR tv_off\n";
+			else
+			{
+				if (std::string arg; !(iss >> arg))
+				{
+					r.Line = "ERROR missing_argument\n";
 				}
-
-				if (!SetChannel(newChannel))
-					return "ERROR invalid_channel\n";
-
-				return "OK\n";
-			}
-			catch (const std::exception&) {
-				return "ERROR invalid_argument\n";
+				else
+				{
+					try
+					{
+						uint32_t newCh = 0;
+						if (!arg.empty() && (arg[0] == '+' || arg[0] == '-'))
+						{
+							newCh = m_CurrentChannel + std::stoi(arg);
+						}
+						else
+						{
+							newCh = std::stoi(arg);
+						}
+						if (newCh < 1 || newCh > m_TotalChannels)
+						{
+							r.Line = "ERROR invalid_channel\n";
+						}
+						else
+						{
+							m_CurrentChannel = newCh;
+							r.Line = "OK\n";
+							r.ChannelChanged = true;
+						}
+					}
+					catch (...)
+					{
+						r.Line = "ERROR invalid_argument\n";
+					}
+				}
 			}
 		}
 
-
-		return "ERROR invalid_command\n";
+		return r;
 	}
-
 }
