@@ -1,55 +1,57 @@
 #include <asio.hpp>
 #include <iostream>
 
+#include "ClientManager.h"
+#include "Session.h"
 #include "SmartTV.h"
 
 constexpr uint16_t DEFAULT_SERVER_PORT = 1238;
 
+using asio::ip::tcp;
+
+class Server
+{
+public:
+	Server(asio::io_context& io, uint16_t port)
+		: m_Acceptor(io, tcp::endpoint(tcp::v4(),port)), m_Tv(10)
+	{
+		Accept();
+	}
+private:
+	void Accept()
+	{
+		m_Acceptor.async_accept([this](asio::error_code ec, tcp::socket socket)
+		{
+			if (!ec)
+			{
+				auto session = std::make_shared<SmartTV::Session>(std::move(socket), m_Tv, m_Manager);
+				session->Start();
+			}
+			Accept();
+		});
+	}
+private:
+	tcp::acceptor m_Acceptor;
+	SmartTV::SmartTV m_Tv;
+	SmartTV::ClientManager m_Manager;
+};
+
 int main(int argc, char* argv[])
 {
+	uint16_t port = DEFAULT_SERVER_PORT;
+	if (argc > 1)
+		port = std::stoi(argv[1]);
+
 	try
 	{
-		uint16_t port = DEFAULT_SERVER_PORT;
-		if (argc > 1)
-			port = std::stoi(argv[1]);
-
 		asio::io_context io;
-		asio::ip::tcp::acceptor acceptor(io,
-			asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port));
-
-		SmartTV::SmartTV tv(20);
+		Server server(io, port);
 		std::cout << "SmartTV server listening on port " << port << "..." << std::endl;
 
-		for (;;)
-		{
-			asio::ip::tcp::socket socket(io);
-			acceptor.accept(socket);
-			std::cout << "Client connected: " << socket.remote_endpoint() << std::endl;
-
-			asio::streambuf buffer;
-			std::istream input(&buffer);
-
-			while (true)
-			{
-				asio::error_code ec;
-				size_t n = asio::read_until(socket, buffer, '\n', ec);
-				if (ec)
-				{
-					std::cout << "Client disconnected: " << socket.remote_endpoint() << std::endl;
-					break;
-				}
-
-				std::string line;
-				std::getline(input, line);
-
-				std::string response = tv.HandleCommand(line);
-				asio::write(socket, asio::buffer(response), ec);
-				if (ec) break;
-			}
-		}
+		io.run();
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Error: " << e.what() << std::endl;
+		std::cerr << e.what() << std::endl;
 	}
 }
