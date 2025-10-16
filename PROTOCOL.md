@@ -55,6 +55,9 @@ Set the TV channel.
 
 - `CHANNELS <c>`
   Reports the total number of available channels.
+  
+- `SERVER_OFFLINE reason=<reason>`
+  Reports server shutdown so client can disconnect gracefully (e.g. stop polling)
 
 ---
 

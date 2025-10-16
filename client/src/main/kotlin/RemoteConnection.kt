@@ -39,6 +39,12 @@ class RemoteConnection
                 {
                     val line = reader?.readLine() ?: break
                     messages.put(line)
+
+                    if (line.startsWith("SERVER_OFFLINE"))
+                    {
+                        messages.put("[!] Server went offline: disconnecting...")
+                        disconnect()
+                    }
                 }
             }
             catch (e: Exception)
