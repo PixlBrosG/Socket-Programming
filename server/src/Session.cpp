@@ -1,4 +1,6 @@
-#include "Session.h"
+#include "SmartTV/Session.h"
+
+#include "SmartTV/Log.h"
 
 namespace SmartTV {
 
@@ -24,6 +26,7 @@ namespace SmartTV {
 	{
 		if (ec)
 		{
+			Logger::Server::Error("{}", ec.message());
 			m_Manager.Remove(shared_from_this());
 			return;
 		}
@@ -32,6 +35,8 @@ namespace SmartTV {
 		std::string command;
 		std::getline(is, command);
 		if (command.empty()) { DoRead(); return; }
+
+		Logger::Server::Info("Received command '{}'", command);
 
 		SmartTV::Result result = m_TV.HandleCommand(command);
 		Deliver(result.Line);

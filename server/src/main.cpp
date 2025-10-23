@@ -3,9 +3,10 @@
 #include <csignal>
 #include <cstdlib>
 
-#include "ClientManager.h"
-#include "Session.h"
-#include "SmartTV.h"
+#include "SmartTV/ClientManager.h"
+#include "SmartTV/Session.h"
+#include "SmartTV/SmartTV.h"
+#include "SmartTV/Log.h"
 
 constexpr uint16_t DEFAULT_SERVER_PORT = 1238;
 
@@ -18,7 +19,7 @@ asio::io_context* g_IOContext = nullptr;
 // --- Signal handler for Ctrl+C or SIGTERM ---
 void SignalHandler(int signal)
 {
-	std::cout << "\n[Signal] Received " << signal << " - shutting down gracefully" << std::endl;
+	Logger::Server::Info("Received signal {} - shutting down gracefully", signal);
 	if (g_Manager) g_Manager->Broadcast("SERVER_OFFLINE reason=signal\n");
 	if (g_IOContext) g_IOContext->stop();
 }
@@ -28,7 +29,7 @@ void OnExit()
 {
 	if (g_Manager)
 	{
-		std::cout << "\n[Exit] Broadcasting SERVER_OFFLINE before shutdown" << std::endl;
+		Logger::Server::Info("Broadcasting SERVER_OFFLINE before shutdown");
 		g_Manager->Broadcast("SERVER_OFFLINE reason=exit\n");
 	}
 }
@@ -68,6 +69,8 @@ int main(int argc, char* argv[])
 	if (argc > 1)
 		port = std::stoi(argv[1]);
 
+	Logger::Init();
+
 	try
 	{
 		asio::io_context io;
@@ -82,13 +85,13 @@ int main(int argc, char* argv[])
 		std::signal(SIGTERM, SignalHandler);
 		std::atexit(OnExit);
 
-		std::cout << "SmartTV server listening on port " << port << "..." << std::endl;
+		Logger::Server::Info("SmartTV server listening on port {}...", port);
 		io.run();
 
-		std::cout << "\n[Server] Clean exit" << std::endl;
+		Logger::Server::Info("SmartTV server shutting down...");
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "\n[Error]" << e.what() << std::endl;
+		Logger::Server::Error("{}", e.what());
 	}
 }

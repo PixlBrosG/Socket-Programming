@@ -1,4 +1,4 @@
-#include "SmartTV.h"
+#include "SmartTV/SmartTV.h"
 
 #include <sstream>
 #include <algorithm>

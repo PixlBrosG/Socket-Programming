@@ -29,8 +29,8 @@ namespace SmartTV {
 	private:
 		mutable std::mutex m_Mutex;
 		bool m_On = false;
-		uint32_t m_TotalChannels;
-		uint32_t m_CurrentChannel;
+		uint32_t m_TotalChannels = 10;
+		uint32_t m_CurrentChannel = 1;
 	};
 
 }
